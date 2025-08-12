@@ -1,0 +1,590 @@
+<!-- Save this whole document as index.html and open it in any modern browser -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Advanced Mini Activity</title>
+  <meta name="description" content="Advanced mini activity site - dynamic cards, contact form, dark mode, animations.">
+  <style>
+    /* --------------------
+       VARIABLES & BASE
+       -------------------- */
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --text:#0b1320;
+      --primary:#0b79d0; --primary-dark:#075b9a;
+      --muted:#6b7280;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,ui-sans-serif,system-ui,Arial,sans-serif;
+      background:var(--bg);color:var(--text);line-height:1.4;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      transition:background .25s,color .25s;
+    }
+    .dark { --bg:#071022; --card:#071a2a; --text:#e6f6ff; --muted:#9fb6cc; --primary:#0ea5ff; --primary-dark:#0b7fcf; }
+    a{color:inherit}
+    main{max-width:1100px;margin:28px auto;padding:0 18px}
+
+    /* --------------------
+       NAVBAR
+       -------------------- */
+    header.nav {
+      position:sticky; top:0; z-index:1200;
+      background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+      color:white; padding:12px 18px; display:flex; align-items:center; gap:16px;
+      justify-content:space-between; box-shadow:0 6px 18px rgba(2,6,23,.08);
+    }
+    .brand{font-weight:700;letter-spacing:.2px}
+    nav.links{display:flex;gap:8px;align-items:center}
+    nav.links a{color:rgba(255,255,255,.95);text-decoration:none;padding:8px 10px;border-radius:8px}
+    nav.links a.active, nav.links a:hover{background:rgba(255,255,255,.12)}
+    .nav-actions{display:flex;gap:8px;align-items:center}
+    .btn {background:rgba(255,255,255,.12);border:0;color:white;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .btn.icon {padding:8px;display:inline-grid;place-items:center}
+    .small {font-size:.95rem;padding:6px 8px}
+
+    /* --------------------
+       HERO
+       -------------------- */
+    .hero{padding:34px 0;text-align:center}
+    #welcome {font-size:1.8rem;margin:0 0 8px}
+    .typing-cursor{border-right:2px solid currentColor;padding-right:6px;animation:blink .7s steps(1) infinite}
+    @keyframes blink{50%{border-color:transparent}}
+
+    /* --------------------
+       LAYOUT
+       -------------------- */
+    .controls {display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+    .grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
+    .card {
+      background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 26px rgba(8,15,30,.06);
+      transition:transform .22s,box-shadow .22s,background .22s;
+    }
+    .card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(8,15,30,.12)}
+    .card h3{margin:0 0 6px}
+    .muted{color:var(--muted);font-size:.95rem}
+
+    /* --------------------
+       CONTACT
+       -------------------- */
+    .contact {max-width:640px;margin:12px auto;padding:16px}
+    .field{display:block;margin-top:10px}
+    input[type=text], input[type=email], textarea{
+      width:100%;padding:10px;border-radius:8px;border:1px solid rgba(10,20,40,.06);background:transparent;color:inherit;
+    }
+    textarea{min-height:130px;resize:vertical}
+    .status{margin-top:12px;font-weight:600}
+
+    /* --------------------
+       SMALL UI ELEMENTS
+       -------------------- */
+    .row{display:flex;gap:8px;align-items:center}
+    .chip{display:inline-block;background:rgba(0,0,0,.06);padding:6px 8px;border-radius:999px;font-size:.9rem}
+    .center{display:flex;align-items:center;justify-content:center}
+    .hidden{display:none!important}
+
+    /* --------------------
+       MODAL
+       -------------------- */
+    #modal {position:fixed;inset:0;background:rgba(2,6,23,.6);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;pointer-events:none;transition:opacity .15s}
+    #modal.open{opacity:1;pointer-events:auto}
+    .modal-box{background:var(--card);padding:20px;border-radius:12px;max-width:420px;text-align:center;box-shadow:0 12px 40px rgba(2,6,23,.35)}
+
+    /* --------------------
+       BACK TO TOP
+       -------------------- */
+    #backTop{position:fixed;right:18px;bottom:22px;background:var(--primary);color:white;padding:10px;border-radius:50%;cursor:pointer;display:none;z-index:1500;border:0}
+
+    /* --------------------
+       CURSOR
+       -------------------- */
+    #cursor{position:fixed;left:0;top:0;width:14px;height:14px;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);z-index:3000;mix-blend-mode:screen;transition:transform .04s linear}
+
+    /* --------------------
+       REVEAL
+       -------------------- */
+    .reveal{opacity:0;transform:translateY(18px);transition:all .6s cubic-bezier(.2,.9,.3,1)}
+    .reveal.show{opacity:1;transform:none}
+
+    /* --------------------
+       RESPONSIVE
+       -------------------- */
+    @media (max-width:640px){
+      header.nav{padding:10px}
+      #welcome{font-size:1.3rem}
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <header class="nav" role="banner" id="navbar">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="brand">MiniActivity</div>
+      <nav class="links" role="navigation" aria-label="Main">
+        <a href="#home" data-target="home" class="active">Home</a>
+        <a href="#activities" data-target="activities">Activities</a>
+        <a href="#contact" data-target="contact">Contact</a>
+      </nav>
+    </div>
+    <div class="nav-actions">
+      <button class="btn icon" id="themeBtn" aria-label="Toggle theme">🌙</button>
+      <button class="btn small" id="downloadBtn" title="Download project">Download</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <!-- HOME / HERO -->
+    <section id="home" class="hero" aria-labelledby="welcome-label">
+      <div class="hero-inner center" style="flex-direction:column;gap:8px;padding:28px 18px">
+        <h1 id="welcome" class="typing-cursor" aria-label="Welcome message">Welcome!</h1>
+        <div id="clock" class="muted"></div>
+        <div class="controls">
+          <button class="btn cta" id="bgBtn">Change Background</button>
+          <button class="btn cta" id="addCard">Add Card</button>
+          <button class="btn cta" id="quoteBtn">Get Quote</button>
+          <button class="btn small" id="clearName">Reset Name</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACTIVITIES -->
+    <section id="activities" style="padding-top:6px">
+      <main class="container">
+        <h2 class="reveal">Interactive Activities</h2>
+        <p class="muted reveal" style="margin-top:6px">Try the built-in mini apps — calculator, todo-card, quote, and dynamic DOM actions.</p>
+
+        <div class="grid" id="cardsGrid" aria-live="polite" style="margin-top:18px">
+          <!-- Cards injected here -->
+        </div>
+
+        <!-- Compact calculator card template will be one of the cards -->
+      </main>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" style="padding:28px 0">
+      <div class="contact reveal">
+        <h2>Contact Us</h2>
+        <p class="muted">Leave a message and we'll reply soon. The form autosaves locally.</p>
+
+        <form id="contactForm" aria-label="Contact form" autocomplete="off">
+          <label class="field" for="cname">Name</label>
+          <input id="cname" name="cname" type="text" placeholder="Your name" required>
+
+          <label class="field" for="cemail">Email</label>
+          <input id="cemail" name="cemail" type="email" placeholder="Your email" required>
+
+          <label class="field" for="cmessage">Message</label>
+          <textarea id="cmessage" name="cmessage" placeholder="Write your message..." required></textarea>
+
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" type="submit">Send</button>
+            <button class="btn" type="button" id="saveDraft">Save Draft</button>
+            <button class="btn" type="button" id="clearDraft">Clear Draft</button>
+          </div>
+        </form>
+
+        <div id="formStatus" class="status muted" aria-live="polite" style="margin-top:12px"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div id="modal" role="dialog" aria-modal="true">
+    <div class="modal-box" role="document">
+      <h3 id="modalTitle">Message Sent</h3>
+      <p id="modalText">Thanks — we'll get back to you soon!</p>
+      <div style="margin-top:14px">
+        <button class="btn" id="closeModal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACK TO TOP -->
+  <button id="backTop" title="Back to top">⬆</button>
+
+  <!-- CUSTOM CURSOR -->
+  <div id="cursor" aria-hidden="true"></div>
+
+  <script>
+    /******************************
+     * Advanced Mini Activity JS
+     ******************************/
+
+    /* ---------- Utilities ---------- */
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const randHex = () => '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+
+    /* ---------- Theme & Persistent Name ---------- */
+    const body = document.body;
+    const themeBtn = $('#themeBtn');
+    const NAV_LINKS = $$('.links a');
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('site-theme');
+    if (savedTheme === 'dark') body.classList.add('dark'), themeBtn.textContent = '☀️';
+
+    themeBtn.addEventListener('click', () => {
+      const isDark = body.classList.toggle('dark');
+      themeBtn.textContent = isDark ? '☀️' : '🌙';
+      localStorage.setItem('site-theme', isDark ? 'dark' : 'light');
+    });
+
+    /* ---------- Typing Welcome & Name Storage ---------- */
+    const welcomeEl = $('#welcome');
+    function typeText(el, text, speed=60) {
+      el.textContent = '';
+      let i=0;
+      const timer = setInterval(()=> {
+        el.textContent += text.charAt(i++);
+        if (i >= text.length) clearInterval(timer);
+      }, speed);
+    }
+    function promptNameIfNeeded(){
+      const saved = localStorage.getItem('visitor-name');
+      if (!saved) {
+        const name = prompt("Hey, what's your name?") || 'Guest';
+        localStorage.setItem('visitor-name', name);
+        return name;
+      }
+      return saved;
+    }
+    let visitor = promptNameIfNeeded();
+    typeText(welcomeEl, `Welcome, ${visitor}!`);
+
+    // clear name button
+    $('#clearName').addEventListener('click', () => {
+      localStorage.removeItem('visitor-name');
+      visitor = promptNameIfNeeded();
+      typeText(welcomeEl, `Welcome, ${visitor}!`);
+    });
+
+    /* ---------- Live Clock ---------- */
+    const clock = $('#clock');
+    function updateClock(){
+      const now = new Date();
+      clock.textContent = now.toLocaleTimeString();
+    }
+    updateClock(); setInterval(updateClock,1000);
+
+    /* ---------- Background Changer ---------- */
+    $('#bgBtn').addEventListener('click', ()=> {
+      document.documentElement.style.setProperty('--bg', randHex());
+      // subtle card adjust
+      document.documentElement.style.setProperty('--card', '#fff');
+    });
+
+    /* ---------- Cards: dynamic content (calculator, todo, quote) ---------- */
+    const cardsGrid = $('#cardsGrid');
+
+    // Templates
+    function calcCardHTML(){
+      return `
+        <div class="card" data-type="calc" aria-label="Mini Calculator">
+          <h3>Mini Calculator</h3>
+          <div class="muted">Simple operations</div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <input aria-label="Number 1" type="number" id="c_num1" placeholder="Num 1" style="flex:1;padding:8px;border-radius:8px">
+            <input aria-label="Number 2" type="number" id="c_num2" placeholder="Num 2" style="flex:1;padding:8px;border-radius:8px">
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="btn" data-op="add">+</button>
+            <button class="btn" data-op="sub">−</button>
+            <button class="btn" data-op="mul">×</button>
+            <button class="btn" data-op="div">÷</button>
+            <button class="btn" id="clearCalc">CLR</button>
+          </div>
+          <div id="calcRes" style="margin-top:8px;font-weight:700"></div>
+        </div>`;
+    }
+
+    function todoCardHTML(){
+      return `
+        <div class="card" data-type="todo" aria-label="Todo Cards">
+          <h3>Notes / Todo</h3>
+          <div class="muted">Create small notes</div>
+          <input id="todoInput" placeholder="Write a note & press Add" style="width:100%;margin-top:8px;padding:8px;border-radius:8px">
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="addTodo">Add</button>
+            <button class="btn" id="clearTodos">Clear all</button>
+          </div>
+          <ul id="todoList" style="margin-top:10px;padding-left:18px"></ul>
+        </div>`;
+    }
+
+    function quoteCardHTML(){
+      return `
+        <div class="card" data-type="quote" aria-label="Quote Generator">
+          <h3>Random Quote</h3>
+          <div class="muted">Inspiration</div>
+          <div style="margin-top:10px;min-height:48px" id="quoteArea">Click to get a quote</div>
+          <div style="margin-top:10px">
+            <button class="btn" id="nextQuote">New Quote</button>
+            <button class="btn" id="saveQuote">Save Quote</button>
+          </div>
+          <ul id="savedQuotes" style="margin-top:10px;padding-left:18px"></ul>
+        </div>`;
+    }
+
+    // initial cards
+    function addInitialCards(){
+      cardsGrid.insertAdjacentHTML('beforeend', calcCardHTML());
+      cardsGrid.insertAdjacentHTML('beforeend', todoCardHTML());
+      cardsGrid.insertAdjacentHTML('beforeend', quoteCardHTML());
+      // action listeners bind
+      bindCardActions();
+      revealAll(); // make them visible with reveal animation
+    }
+    addInitialCards();
+
+    // Add Card button (dynamically add a generic card)
+    $('#addCard').addEventListener('click', ()=> {
+      const html = `<div class="card reveal"><h3>New Card</h3><div class="muted">Added dynamically</div><p style="margin-top:8px">You can remove this card.</p><div style="margin-top:8px"><button class="btn remove">Remove</button></div></div>`;
+      cardsGrid.insertAdjacentHTML('beforeend', html);
+      bindCardActions(); revealAll();
+    });
+
+    // Binding card actions: calculator operations, todo, quote
+    function bindCardActions(){
+      // Calculator
+      const calcCard = cardsGrid.querySelector('[data-type="calc"]');
+      if (calcCard){
+        const num1 = calcCard.querySelector('#c_num1');
+        const num2 = calcCard.querySelector('#c_num2');
+        const res = calcCard.querySelector('#calcRes');
+        calcCard.querySelectorAll('button[data-op]').forEach(btn=>{
+          btn.onclick = () => {
+            const a = parseFloat(num1.value), b = parseFloat(num2.value);
+            if (isNaN(a) || isNaN(b)) { res.textContent = 'Enter both numbers'; return; }
+            let val;
+            switch(btn.dataset.op){
+              case 'add': val = a + b; break;
+              case 'sub': val = a - b; break;
+              case 'mul': val = a * b; break;
+              case 'div': val = b !== 0 ? a / b : '∞ (div by 0)'; break;
+            }
+            res.textContent = 'Result: ' + val;
+          };
+        });
+        calcCard.querySelector('#clearCalc').onclick = () => {
+          num1.value=''; num2.value=''; res.textContent='';
+        };
+      }
+
+      // Todo
+      const todoCard = cardsGrid.querySelector('[data-type="todo"]');
+      if (todoCard){
+        const input = todoCard.querySelector('#todoInput');
+        const list = todoCard.querySelector('#todoList');
+        const saved = JSON.parse(localStorage.getItem('mini-todos') || '[]');
+        saved.forEach(t => {
+          const li = document.createElement('li'); li.textContent = t;
+          const rm = document.createElement('button'); rm.textContent='✖'; rm.style.marginLeft='8px';
+          rm.className='btn'; rm.onclick = ()=>{ li.remove(); persistTodos(); };
+          li.appendChild(rm); list.appendChild(li);
+        });
+        todoCard.querySelector('#addTodo').onclick = ()=> {
+          const v = (input.value||'').trim(); if(!v) return;
+          const li = document.createElement('li'); li.textContent = v;
+          const rm = document.createElement('button'); rm.textContent='✖'; rm.style.marginLeft='8px';
+          rm.className='btn'; rm.onclick = ()=>{ li.remove(); persistTodos(); };
+          li.appendChild(rm); list.appendChild(li);
+          input.value=''; persistTodos();
+        };
+        todoCard.querySelector('#clearTodos').onclick = ()=> {
+          list.innerHTML=''; persistTodos();
+        };
+        function persistTodos(){
+          const arr = Array.from(list.querySelectorAll('li')).map(li => li.firstChild.textContent);
+          localStorage.setItem('mini-todos', JSON.stringify(arr));
+        }
+      }
+
+      // Quote
+      const quoteCard = cardsGrid.querySelector('[data-type="quote"]');
+      if (quoteCard){
+        const area = quoteCard.querySelector('#quoteArea');
+        const savedList = quoteCard.querySelector('#savedQuotes');
+        const quotes = [
+          "Dream big. Start small.",
+          "Consistency beats intensity.",
+          "Make today count.",
+          "Learn, build, repeat.",
+          "Don't fear mistakes; learn from them."
+        ];
+        quoteCard.querySelector('#nextQuote').onclick = ()=> {
+          area.textContent = quotes[Math.floor(Math.random()*quotes.length)];
+        };
+        quoteCard.querySelector('#saveQuote').onclick = ()=> {
+          const q = (area.textContent||'').trim(); if(!q) return;
+          const li = document.createElement('li'); li.textContent = q;
+          const rm = document.createElement('button'); rm.textContent='✖'; rm.style.marginLeft='8px';
+          rm.className='btn'; rm.onclick = ()=> li.remove();
+          li.appendChild(rm); savedList.appendChild(li);
+        };
+      }
+
+      // Remove buttons on generic cards
+      cardsGrid.querySelectorAll('.card .remove').forEach(btn=>{
+        btn.onclick = (e)=> e.target.closest('.card').remove();
+      });
+    }
+
+    /* ---------- Quote generator main button ---------- */
+    $('#quoteBtn').addEventListener('click', ()=> {
+      // show a quick page quote modal or toast
+      const quotes = [
+        "Great things take time.",
+        "Progress, not perfection.",
+        "Keep learning daily.",
+        "Be kind to yourself.",
+        "Small steps add up."
+      ];
+      const q = quotes[Math.floor(Math.random()*quotes.length)];
+      showModal('Quote for you', q);
+    });
+
+    /* ---------- Modal ---------- */
+    const modal = $('#modal');
+    const closeModal = $('#closeModal');
+    function showModal(title, text){
+      $('#modalTitle').textContent = title;
+      $('#modalText').textContent = text;
+      modal.classList.add('open');
+    }
+    closeModal.addEventListener('click', ()=> modal.classList.remove('open'));
+
+    /* ---------- Contact form (autosave & submit) ---------- */
+    const contactForm = $('#contactForm');
+    const formStatus = $('#formStatus');
+    const fields = ['cname','cemail','cmessage'];
+    // load draft
+    fields.forEach(id=>{
+      const el = $('#'+id);
+      const val = localStorage.getItem('draft-'+id);
+      if (val) el.value = val;
+      el.addEventListener('input', ()=> localStorage.setItem('draft-'+id, el.value));
+    });
+
+    $('#saveDraft').addEventListener('click', ()=> {
+      formStatus.textContent = 'Draft saved locally ✨';
+      setTimeout(()=> formStatus.textContent = '', 2200);
+    });
+    $('#clearDraft').addEventListener('click', ()=> {
+      fields.forEach(id=> { localStorage.removeItem('draft-'+id); $('#'+id).value=''; });
+      formStatus.textContent = 'Draft cleared';
+      setTimeout(()=> formStatus.textContent = '', 1600);
+    });
+
+    contactForm.addEventListener('submit', (e)=> {
+      e.preventDefault();
+      const name = $('#cname').value.trim();
+      const email = $('#cemail').value.trim();
+      const msg = $('#cmessage').value.trim();
+      if (!name || !email || !msg) {
+        formStatus.style.color = 'crimson';
+        formStatus.textContent = 'Please fill all fields.';
+        return;
+      }
+      // pretend to send: show modal and clear
+      showModal('Message sent', `Thanks ${name}, we'll reply to ${email} soon.`);
+      fields.forEach(id=>{ localStorage.removeItem('draft-'+id); $('#'+id).value=''; });
+      formStatus.style.color = '';
+      formStatus.textContent = '';
+    });
+
+    /* ---------- Download project button (creates a zip-like single file) ---------- */
+    $('#downloadBtn').addEventListener('click', ()=> {
+      const blob = new Blob([document.documentElement.outerHTML], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'mini-activity.html';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    /* ---------- Navbar link smooth scroll and active state ---------- */
+    NAV_LINKS.forEach(a=>{
+      a.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        NAV_LINKS.forEach(x=>x.classList.remove('active'));
+        a.classList.add('active');
+        const target = document.getElementById(a.dataset.target);
+        if (target) target.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    });
+
+    /* ---------- Sticky / scrolled nav color ---------- */
+    const navbar = $('#navbar');
+    window.addEventListener('scroll', ()=> {
+      navbar.classList.toggle('scrolled', window.scrollY > 10);
+      // back to top button
+      $('#backTop').style.display = window.scrollY > 220 ? 'block' : 'none';
+      revealAll();
+    });
+
+    /* ---------- Back to top ---------- */
+    $('#backTop').addEventListener('click', ()=> window.scrollTo({top:0,behavior:'smooth'}));
+
+    /* ---------- Custom cursor ---------- */
+    const cursor = $('#cursor');
+    window.addEventListener('mousemove', (e)=> {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+      // subtle scale on buttons
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      cursor.style.transform = el && el.tagName === 'BUTTON' ? 'translate(-50%,-50%) scale(1.8)' : 'translate(-50%,-50%) scale(1)';
+    });
+
+    /* ---------- Reveal on scroll ---------- */
+    function revealAll(){
+      document.querySelectorAll('.reveal').forEach(el=>{
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight - 60) el.classList.add('show');
+      });
+    }
+    // run once
+    revealAll();
+
+    /* ---------- Entrance & initial animations ---------- */
+    window.addEventListener('load', ()=> {
+      document.body.style.opacity = '1';
+      // small timeout to ensure fonts render
+      setTimeout(()=> revealAll(), 200);
+    });
+
+    /* ---------- Accessibility small tweak: escape modal ---------- */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') modal.classList.remove('open');
+    });
+
+    /* ---------- Helper to reveal existing reveals initially ---------- */
+    document.querySelectorAll('.reveal').forEach((el,i)=> {
+      setTimeout(()=> el.classList.add('show'), 200 + i*120);
+    });
+
+    /* ---------- Optional: Persist visitor name into localStorage for next visits ---------- */
+    // done earlier when prompting.
+
+    /* ---------- Small: feature to quickly add many demo cards ---------- */
+    // Add a few sample content cards:
+    if (!localStorage.getItem('demo-populated')) {
+      const demoHTML = [
+        `<div class="card reveal"><h3>Getting Started</h3><p class="muted">This project includes multiple mini activities built with plain HTML/CSS/JS.</p></div>`,
+        `<div class="card reveal"><h3>Tips</h3><p class="muted">Try dark mode, add cards, or save contact draft to see autosave in action.</p></div>`
+      ].join('');
+      cardsGrid.insertAdjacentHTML('beforeend', demoHTML);
+      bindCardActions();
+      localStorage.setItem('demo-populated','1');
+    }
+
+    /* ---------- Final binding for dynamic items if user adds cards later ---------- */
+    // Use a MutationObserver to rebind actions when new cards are added.
+    const mo = new MutationObserver(()=> bindCardActions());
+    mo.observe(cardsGrid, {childList:true});
+
+  </script>
+</body>
+</html>
